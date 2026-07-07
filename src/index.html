@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juegos Olímpicos 2026 | Live Tracker</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --gold: #fbbf24;
+            --silver: #cbd5e1;
+            --bronze: #b45309;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at top right, #1e293b 0%, transparent 60%),
+                              radial-gradient(circle at bottom left, #0f172a 0%, transparent 60%);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        header {
+            padding: 1.5rem 3rem;
+            background: rgba(15, 23, 42, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-title {
+            margin: 0;
+            font-size: 1.8rem;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .red-dot {
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: pulse-red 1.5s infinite;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            padding: 2rem 3rem;
+            flex-grow: 1;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Feed de eventos */
+        .feed-container {
+            overflow: hidden;
+            flex-grow: 1;
+            position: relative;
+        }
+
+        .feed-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .feed-item {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent);
+            animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+
+        .feed-time {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .feed-text {
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        /* Medallero */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        tr {
+            transition: all 0.5s ease;
+        }
+
+        .row-update {
+            background: rgba(56, 189, 248, 0.2);
+            animation: flashHighlight 1s ease;
+        }
+
+        .medal-count {
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .gold-col { color: var(--gold); }
+        .silver-col { color: var(--silver); }
+        .bronze-col { color: var(--bronze); }
+        .total-col { color: var(--text-main); font-weight: bold; }
+
+        .country-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        @keyframes slideIn {
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes flashHighlight {
+            0% { background: rgba(56, 189, 248, 0.4); }
+            100% { background: transparent; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 class="header-title">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            Tracker Olímpico 2026
+        </h1>
+        <div class="live-indicator">
+            <div class="red-dot"></div>
+            <span style="color: #ef4444; font-weight: 600; font-size: 0.9rem;">EN VIVO</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="panel">
+            <h2>Últimos Eventos</h2>
+            <div class="feed-container">
+                <div class="feed-list" id="feed-list">
+                    </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Medallero Oficial</h2>
+            <table id="medal-table">
+                <thead>
+                    <tr>
+                        <th>Pos</th>
+                        <th>País</th>
+                        <th style="text-align: center;">Oro</th>
+                        <th style="text-align: center;">Plata</th>
+                        <th style="text-align: center;">Bronce</th>
+                        <th style="text-align: center;">Total</th>
+                    </tr>
+                </thead>
+                <tbody id="medal-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer>
+        DevOps Lab | Nginx + Docker Compose | Desarrollado por Aliandy Jimenez
+    </footer>
+
+    <script>
+        // Datos iniciales
+        let countries = [
+            { id: 'DOM', name: 'República Dominicana', gold: 12, silver: 8, bronze: 5 },
+            { id: 'USA', name: 'Estados Unidos', gold: 11, silver: 10, bronze: 9 },
+            { id: 'FRA', name: 'Francia', gold: 9, silver: 12, bronze: 8 },
+            { id: 'JPN', name: 'Japón', gold: 8, silver: 7, bronze: 10 },
+            { id: 'GBR', name: 'Reino Unido', gold: 6, silver: 8, bronze: 6 },
+            { id: 'CN', name: 'Canada', gold: 6, silver: 8, bronze: 3 }
+        ];
+
+        const sports = ['Atletismo 100m', 'Natación 200m', 'Gimnasia Artística', 'Baloncesto', 'Voleibol', 'Ciclismo de Pista', 'Judo'];
+        const medals = ['oro', 'plata', 'bronce'];
+
+        function renderTable(updatedCountryId = null) {
+            // Ordenar por Oro, luego Plata, luego Bronce
+            countries.sort((a, b) => {
+                if (b.gold !== a.gold) return b.gold - a.gold;
+                if (b.silver !== a.silver) return b.silver - a.silver;
+                return b.bronze - a.bronze;
+            });
+
+            const tbody = document.getElementById('medal-body');
+            tbody.innerHTML = '';
+
+            countries.forEach((country, index) => {
+                const total = country.gold + country.silver + country.bronze;
+                const tr = document.createElement('tr');
+                
+                // Si este país acaba de ganar una medalla, le añadimos la clase para la animación
+                if (country.id === updatedCountryId) {
+                    tr.classList.add('row-update');
+                }
+
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td class="country-cell">
+                        <strong>${country.id}</strong> 
+                        <span style="color: var(--text-muted); font-size: 0.9rem;">${country.name}</span>
+                    </td>
+                    <td class="medal-count gold-col">${country.gold}</td>
+                    <td class="medal-count silver-col">${country.silver}</td>
+                    <td class="medal-count bronze-col">${country.bronze}</td>
+                    <td class="medal-count total-col">${total}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function addFeedEvent(countryName, sport, medalType) {
+            const feedList = document.getElementById('feed-list');
+            const item = document.createElement('div');
+            item.className = 'feed-item';
+            
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute:'2-digit', second:'2-digit' });
+
+            let colorHex = medalType === 'oro' ? '#fbbf24' : (medalType === 'plata' ? '#cbd5e1' : '#b45309');
+
+            item.innerHTML = `
+                <div class="feed-time">${timeStr} - ¡Nuevo Resultado!</div>
+                <div class="feed-text">
+                    <strong>${countryName}</strong> acaba de asegurar la medalla de <strong style="color: ${colorHex}; text-transform: uppercase;">${medalType}</strong> en ${sport}.
+                </div>
+            `;
+
+            feedList.prepend(item);
+
+            // Mantener solo los últimos 4 eventos para no saturar el DOM
+            if (feedList.children.length > 3) {
+                feedList.removeChild(feedList.lastChild);
+            }
+        }
+
+        function simulateEvent() {
+            // Seleccionar país, deporte y medalla al azar
+            const randomCountryIndex = Math.floor(Math.random() * countries.length);
+            const country = countries[randomCountryIndex];
+            const sport = sports[Math.floor(Math.random() * sports.length)];
+            const medal = medals[Math.floor(Math.random() * medals.length)];
+
+            // Actualizar datos
+            if (medal === 'oro') country.gold++;
+            if (medal === 'plata') country.silver++;
+            if (medal === 'bronce') country.bronze++;
+
+            // Renderizar UI
+            addFeedEvent(country.name, sport, medal);
+            renderTable(country.id);
+        }
+
+        // Inicializar tabla
+        renderTable();
+
+        // Simular un evento cada 1 a 3 segundos
+        setInterval(() => {
+            simulateEvent();
+        }, Math.random() * 1000 + 3000);
+
+    </script>
+</body>
+</html>
